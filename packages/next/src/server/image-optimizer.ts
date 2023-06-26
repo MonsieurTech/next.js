@@ -42,6 +42,15 @@ const ANIMATABLE_TYPES = [WEBP, PNG, GIF]
 const VECTOR_TYPES = [SVG]
 const BLUR_IMG_SIZE = 8 // should match `next-image-loader`
 const BLUR_QUALITY = 70 // should match `next-image-loader`
+const FORMAT_MAP = {
+  avif: AVIF,
+  webp: WEBP,
+  png: PNG,
+  jpg: JPEG,
+  gif: GIF,
+  svg: SVG,
+  ico: ICO,
+}
 
 let sharp:
   | ((
@@ -170,7 +179,7 @@ export class ImageOptimizerCache {
       formats = ['image/webp'],
     } = imageData
     const remotePatterns = nextConfig.images?.remotePatterns || []
-    const { url, w, q } = query
+    const { url, w, q, f } = query
     let href: string
 
     if (!url) {
@@ -248,7 +257,9 @@ export class ImageOptimizerCache {
       }
     }
 
-    const mimeType = getSupportedMimeType(formats || [], req.headers['accept'])
+    const requestedFormat = f && !Array.isArray(f) && FORMAT_MAP[f as keyof typeof FORMAT_MAP] || ''
+    const accept = req.headers['accept'] || ''
+    const mimeType = requestedFormat && accept.includes(requestedFormat) ? requestedFormat : getSupportedMimeType(formats || [], accept)
 
     const isStatic = url.startsWith(
       `${nextConfig.basePath || ''}/_next/static/media`
