@@ -7,7 +7,7 @@ import contentDisposition from 'next/dist/compiled/content-disposition'
 import { getOrientation, Orientation } from 'next/dist/compiled/get-orientation'
 import imageSizeOf from 'next/dist/compiled/image-size'
 import isAnimated from 'next/dist/compiled/is-animated'
-import { join } from 'path'
+import { dirname, join, resolve } from 'path'
 import nodeUrl, { type UrlWithParsedQuery } from 'url'
 
 import { getImageBlurSvg } from '../shared/lib/image-blur-svg'
@@ -581,6 +581,18 @@ export async function imageOptimizer(
         500,
         '"url" parameter is valid but upstream response is invalid'
       )
+    }
+  }
+
+  if (upstreamBuffer.length === 0 && nextConfig.configFile) {
+    const publicDir = join(dirname(nextConfig.configFile), 'public')
+    const filePath = resolve(publicDir, paramsResult.href.substring(1))
+    if (filePath.startsWith(publicDir)) {
+      try {
+        upstreamBuffer = await promises.readFile(filePath, { encoding: null });
+        upstreamType = detectContentType(upstreamBuffer)
+        maxAge = 0
+      } catch (err) {}
     }
   }
 
